@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Subtle glow circle behind the pulse -->
+    <path
+        android:pathData="M54,54m-22,0a22,22 0,1 1,44 0a22,22 0,1 1,-44 0"
+        android:fillColor="#33E94560" />
+
+    <!-- Audio pulse / heartbeat waveform — the signature shape -->
+    <!-- A stylized EKG/audio waveform centered in the icon -->
+    <path
+        android:pathData="M24,54 L34,54 L38,42 L42,66 L46,38 L50,70 L54,32 L58,72 L62,36 L66,68 L70,44 L74,54 L84,54"
+        android:strokeWidth="3.5"
+        android:strokeColor="#E94560"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- Small accent dot on the peak — the "sense" -->
+    <path
+        android:pathData="M54,32m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#E94560" />
+
+</vector>

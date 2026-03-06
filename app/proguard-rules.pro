@@ -1,0 +1,1 @@
+# BeatSense ProGuard rules
