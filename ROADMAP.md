@@ -100,7 +100,7 @@ Living document. Items are grouped by theme, not priority. Status markers:
 
 | Item | Description | Status |
 |------|-------------|--------|
-| GitHub Actions CI | Automated build + test on every push to main | Planned |
+| GitHub Actions CI | Automated build + test on every push to main | Done |
 | Instrumented tests | Android emulator tests for service lifecycle and permissions | Planned |
 | Code coverage reporting | Track test coverage for the DSP core | Planned |
 | Explicit value objects | Replace primitive Float/String with typed Bpm, MusicalKey, Confidence | Planned |
