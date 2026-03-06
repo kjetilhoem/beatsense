@@ -14,8 +14,8 @@ import kotlin.math.*
  */
 object KeyDetector {
 
-    private const val SAMPLE_RATE = AudioCaptureService.SAMPLE_RATE
-    private const val FFT_SIZE = AudioCaptureService.BUFFER_SIZE
+    private const val SAMPLE_RATE = AudioConfig.SAMPLE_RATE
+    private const val FFT_SIZE = AudioConfig.BUFFER_SIZE
 
     private val NOTE_NAMES = arrayOf("C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B")
 

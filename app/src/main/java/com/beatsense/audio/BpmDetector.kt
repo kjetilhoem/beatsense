@@ -13,8 +13,8 @@ import kotlin.math.sqrt
  */
 object BpmDetector {
 
-    private const val SAMPLE_RATE = AudioCaptureService.SAMPLE_RATE
-    private const val BUFFER_SIZE = AudioCaptureService.BUFFER_SIZE
+    private const val SAMPLE_RATE = AudioConfig.SAMPLE_RATE
+    private const val BUFFER_SIZE = AudioConfig.BUFFER_SIZE
 
     // Precise buffers-per-second as float to avoid integer division truncation
     private const val BUFFERS_PER_SECOND = SAMPLE_RATE.toFloat() / BUFFER_SIZE

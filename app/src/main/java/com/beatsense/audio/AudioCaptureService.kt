@@ -19,8 +19,6 @@ import kotlin.concurrent.thread
 class AudioCaptureService : Service() {
 
     companion object {
-        const val SAMPLE_RATE = 44100
-        const val BUFFER_SIZE = 4096
         const val CHANNEL_ID = "beatsense_capture"
 
         const val MODE_APP_AUDIO = "app_audio"
@@ -28,6 +26,9 @@ class AudioCaptureService : Service() {
 
         var onAudioData: ((FloatArray) -> Unit)? = null
     }
+
+    private val sampleRate = AudioConfig.SAMPLE_RATE
+    private val bufferSize = AudioConfig.BUFFER_SIZE
 
     private var mediaProjection: MediaProjection? = null
     private var audioRecord: AudioRecord? = null
@@ -76,14 +77,14 @@ class AudioCaptureService : Service() {
 
         val audioFormat = AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-            .setSampleRate(SAMPLE_RATE)
+            .setSampleRate(sampleRate)
             .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
             .build()
 
         audioRecord = AudioRecord.Builder()
             .setAudioPlaybackCaptureConfig(captureConfig)
             .setAudioFormat(audioFormat)
-            .setBufferSizeInBytes(BUFFER_SIZE * 4)
+            .setBufferSizeInBytes(bufferSize * 4)
             .build()
 
         startRecordingLoop()
@@ -92,12 +93,12 @@ class AudioCaptureService : Service() {
     private fun startMicCapture() {
         val audioFormat = AudioFormat.Builder()
             .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-            .setSampleRate(SAMPLE_RATE)
+            .setSampleRate(sampleRate)
             .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
             .build()
 
         val minBufferSize = AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
+            sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_FLOAT
         )
@@ -105,7 +106,7 @@ class AudioCaptureService : Service() {
         audioRecord = AudioRecord.Builder()
             .setAudioSource(MediaRecorder.AudioSource.MIC)
             .setAudioFormat(audioFormat)
-            .setBufferSizeInBytes(maxOf(BUFFER_SIZE * 4, minBufferSize))
+            .setBufferSizeInBytes(maxOf(bufferSize * 4, minBufferSize))
             .build()
 
         startRecordingLoop()
@@ -116,9 +117,9 @@ class AudioCaptureService : Service() {
         isRecording = true
 
         thread(name = "AudioCapture") {
-            val buffer = FloatArray(BUFFER_SIZE)
+            val buffer = FloatArray(bufferSize)
             while (isRecording) {
-                val read = audioRecord?.read(buffer, 0, BUFFER_SIZE, AudioRecord.READ_BLOCKING) ?: 0
+                val read = audioRecord?.read(buffer, 0, bufferSize, AudioRecord.READ_BLOCKING) ?: 0
                 if (read > 0) {
                     onAudioData?.invoke(buffer.copyOf(read))
                 }

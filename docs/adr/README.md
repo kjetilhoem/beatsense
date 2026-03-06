@@ -12,3 +12,4 @@ This directory contains the ADRs for BeatSense, following Michael Nygard's forma
 | [0006](0006-dual-capture-modes.md) | Dual capture modes — app audio and microphone | Accepted |
 | [0007](0007-command-line-build-no-android-studio.md) | Command-line build — no Android Studio | Accepted |
 | [0008](0008-luminous-dark-design-system.md) | "Luminous" dark design system | Accepted |
+| [0009](0009-continuous-delivery.md) | Continuous Delivery | Accepted |
