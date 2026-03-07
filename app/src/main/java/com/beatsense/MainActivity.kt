@@ -13,10 +13,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
-import com.beatsense.audio.AudioAnalyzer
+import com.beatsense.analyzer.AnalyzerRegistry
+import com.beatsense.analyzer.AnalyzerResult
+import com.beatsense.analyzer.BpmAnalyzer
+import com.beatsense.analyzer.KeyAnalyzer
+import com.beatsense.analyzer.LevelAnalyzer
 import com.beatsense.audio.AudioCaptureService
-import com.beatsense.audio.BpmDetector
-import com.beatsense.audio.KeyDetector
 import com.beatsense.ui.BeatSenseScreen
 import com.beatsense.ui.CaptureMode
 
@@ -29,6 +31,12 @@ class MainActivity : ComponentActivity() {
     private val bpmConfidence = mutableFloatStateOf(0f)
     private val keyConfidence = mutableFloatStateOf(0f)
     private val captureMode = mutableStateOf(CaptureMode.APP_AUDIO)
+
+    private val registry = AnalyzerRegistry().apply {
+        register(BpmAnalyzer())
+        register(KeyAnalyzer())
+        register(LevelAnalyzer())
+    }
 
     private val mediaProjectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -86,24 +94,38 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startCaptureService(mode: String, resultCode: Int? = null, data: Intent? = null) {
-        // Reset analyzers for fresh session
-        BpmDetector.reset()
-        KeyDetector.reset()
-        AudioAnalyzer.reset()
+        registry.resetAll()
 
         AudioCaptureService.onAudioData = { buffer ->
-            audioLevel.floatValue = AudioAnalyzer.computeLevel(buffer)
-
-            val bpm = BpmDetector.detect(buffer)
-            if (bpm > 0f) {
-                bpmState.floatValue = bpm
-                bpmConfidence.floatValue = BpmDetector.getConfidence()
-            }
-
-            val key = KeyDetector.detect(buffer)
-            if (key != null) {
-                keyState.value = key
-                keyConfidence.floatValue = KeyDetector.getConfidence()
+            val results = registry.process(buffer)
+            for ((id, result) in results) {
+                when (id) {
+                    "bpm" -> when (result) {
+                        is AnalyzerResult.HeroValue -> {
+                            bpmState.floatValue = result.value.toFloatOrNull() ?: 0f
+                            bpmConfidence.floatValue = result.confidence
+                        }
+                        is AnalyzerResult.Pending -> {} // keep last value
+                        else -> {}
+                    }
+                    "key" -> when (result) {
+                        is AnalyzerResult.HeroValue -> {
+                            keyState.value = result.value
+                            keyConfidence.floatValue = result.confidence
+                        }
+                        is AnalyzerResult.Pending -> {
+                            keyState.value = "—"
+                            keyConfidence.floatValue = 0f
+                        }
+                        else -> {}
+                    }
+                    "level" -> when (result) {
+                        is AnalyzerResult.Meter -> {
+                            audioLevel.floatValue = result.level
+                        }
+                        else -> {}
+                    }
+                }
             }
         }
 

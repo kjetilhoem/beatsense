@@ -13,3 +13,4 @@ This directory contains the ADRs for BeatSense, following Michael Nygard's forma
 | [0007](0007-command-line-build-no-android-studio.md) | Command-line build — no Android Studio | Accepted |
 | [0008](0008-luminous-dark-design-system.md) | "Luminous" dark design system | Accepted |
 | [0009](0009-continuous-delivery.md) | Continuous Delivery | Accepted |
+| [0010](0010-analyzer-pipeline-architecture.md) | Analyzer pipeline architecture | Accepted |
