@@ -36,8 +36,10 @@ class MainActivity : ComponentActivity() {
         register(LufsAnalyzer())
         register(FrequencyBandAnalyzer())
         register(SpectralCentroidAnalyzer())
+        register(SpectralRolloffAnalyzer())
         register(TransientDensityAnalyzer())
         register(CrestFactorAnalyzer())
+        register(DynamicRangeAnalyzer())
     }
 
     private val mediaProjectionLauncher = registerForActivityResult(
