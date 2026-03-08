@@ -3,15 +3,11 @@ package com.beatsense.analyzer
 import com.beatsense.audio.KeyDetector
 
 /**
- * Key analyzer — wraps the existing KeyDetector as an Analyzer.
+ * Key analyzer — reports root note and mode (Major/Minor) independently.
  *
  * Uses raw PCM (KeyDetector has its own windowing and DFT internally).
- * Returns HeroValue with key name and confidence.
- *
- * Note: KeyDetector still computes its own chromagram internally for now.
- * A future optimization could have it consume frame.chromagram instead,
- * but correctness comes first — the internal chromagram accumulation
- * and evidence gating are tightly coupled to the detector's own DFT.
+ * Returns ValueGroup with separate Root and Mode values, allowing
+ * mode to update without root changing in the UI.
  */
 class KeyAnalyzer : Analyzer {
 
@@ -20,13 +16,25 @@ class KeyAnalyzer : Analyzer {
     override val displayPriority = 10
 
     override fun analyze(frame: AudioFrame): AnalyzerResult {
-        val key = KeyDetector.detect(frame.pcm)
+        KeyDetector.detect(frame.pcm)
+        val keyResult = KeyDetector.getKeyResult()
+
         return when {
-            key == null || key == "—" -> AnalyzerResult.Pending("KEY", "Accumulating...")
-            else -> AnalyzerResult.HeroValue(
-                value = key,
+            keyResult.root == null || keyResult.mode == null ->
+                AnalyzerResult.Pending("KEY", "Accumulating...")
+
+            else -> AnalyzerResult.ValueGroup(
                 label = "KEY",
-                confidence = KeyDetector.getConfidence()
+                values = listOf(
+                    AnalyzerResult.ValueGroup.LabeledValue(
+                        label = "Root",
+                        value = keyResult.root
+                    ),
+                    AnalyzerResult.ValueGroup.LabeledValue(
+                        label = "Mode",
+                        value = keyResult.mode
+                    )
+                )
             )
         }
     }

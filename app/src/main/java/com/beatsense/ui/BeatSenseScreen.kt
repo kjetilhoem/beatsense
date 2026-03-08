@@ -29,7 +29,8 @@ import com.beatsense.ui.BeatSenseTheme as T
 @Composable
 fun BeatSenseScreen(
     bpm: Float,
-    musicalKey: String,
+    rootNote: String,
+    musicalMode: String,
     isCapturing: Boolean,
     audioLevel: Float,
     bpmConfidence: Float,
@@ -171,7 +172,7 @@ fun BeatSenseScreen(
 
             Spacer(modifier = Modifier.height(T.spaceM))
 
-            // — Key Card —
+            // — Key Card (root + mode separated) —
             Card(
                 shape = RoundedCornerShape(T.radiusL),
                 colors = CardDefaults.cardColors(containerColor = T.surface1),
@@ -200,14 +201,25 @@ fun BeatSenseScreen(
                         letterSpacing = 2.sp
                     )
                     Spacer(modifier = Modifier.height(T.spaceS))
+                    // Root note — large, prominent
                     Text(
-                        text = musicalKey,
+                        text = rootNote,
                         fontSize = T.textDisplay,
                         fontWeight = FontWeight.Bold,
                         color = T.textPrimary,
                         textAlign = TextAlign.Center
                     )
-                    if (musicalKey != "—" && keyConfidence > 0f) {
+                    // Mode — smaller, secondary
+                    if (musicalMode.isNotEmpty()) {
+                        Text(
+                            text = musicalMode,
+                            fontSize = T.textBody,
+                            fontWeight = FontWeight.Normal,
+                            color = T.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    if (rootNote != "—" && keyConfidence > 0f) {
                         Spacer(modifier = Modifier.height(T.spaceM))
                         ConfidenceBar(confidence = keyConfidence, label = "confidence")
                     }
