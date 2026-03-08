@@ -1,5 +1,7 @@
 package com.beatsense.analyzer
 
+import java.util.Locale
+
 /**
  * Spectral centroid analyzer — where the spectral weight sits.
  *
@@ -66,7 +68,7 @@ class SpectralCentroidAnalyzer : Analyzer {
         val confidence = (magnitudeSum / (spectrum.size * 0.01)).toFloat().coerceIn(0f, 1f)
 
         return AnalyzerResult.HeroValue(
-            value = "$brightnessLabel\n%.0f Hz".format(smoothedCentroid),
+            value = "$brightnessLabel\n${String.format(Locale.US, "%.0f", smoothedCentroid)} Hz",
             label = "BRIGHTNESS",
             confidence = confidence
         )
