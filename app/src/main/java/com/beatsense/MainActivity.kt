@@ -25,7 +25,8 @@ import com.beatsense.ui.CaptureMode
 class MainActivity : ComponentActivity() {
 
     private val bpmState = mutableFloatStateOf(0f)
-    private val keyState = mutableStateOf("—")
+    private val rootNoteState = mutableStateOf("—")
+    private val modeState = mutableStateOf("")
     private val isCapturing = mutableStateOf(false)
     private val audioLevel = mutableFloatStateOf(0f)
     private val bpmConfidence = mutableFloatStateOf(0f)
@@ -64,13 +65,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             BeatSenseScreen(
                 bpm = bpmState.floatValue,
-                musicalKey = keyState.value,
+                rootNote = rootNoteState.value,
+                musicalMode = modeState.value,
                 isCapturing = isCapturing.value,
                 audioLevel = audioLevel.floatValue,
                 bpmConfidence = bpmConfidence.floatValue,
                 keyConfidence = keyConfidence.floatValue,
                 captureMode = captureMode.value,
-                onModeChanged = { mode -> captureMode.value = mode },
+                onModeChanged = { selected -> captureMode.value = selected },
                 onStartCapture = { startCapture() },
                 onStopCapture = { stopCaptureService() }
             )
@@ -109,12 +111,16 @@ class MainActivity : ComponentActivity() {
                         else -> {}
                     }
                     "key" -> when (result) {
-                        is AnalyzerResult.HeroValue -> {
-                            keyState.value = result.value
-                            keyConfidence.floatValue = result.confidence
+                        is AnalyzerResult.ValueGroup -> {
+                            val root = result.values.find { it.label == "Root" }
+                            val mode = result.values.find { it.label == "Mode" }
+                            rootNoteState.value = root?.value ?: "—"
+                            modeState.value = mode?.value ?: ""
+                            keyConfidence.floatValue = com.beatsense.audio.KeyDetector.getConfidence()
                         }
                         is AnalyzerResult.Pending -> {
-                            keyState.value = "—"
+                            rootNoteState.value = "—"
+                            modeState.value = ""
                             keyConfidence.floatValue = 0f
                         }
                         else -> {}

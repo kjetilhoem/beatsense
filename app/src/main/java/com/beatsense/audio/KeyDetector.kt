@@ -28,7 +28,22 @@ object KeyDetector {
 
     private var frameCount = 0
     private var lastKey: String? = null
+    private var lastRoot: String? = null
+    private var lastMode: String? = null
     private var confidence = 0f
+
+    /**
+     * Separated key detection result.
+     * Root and mode are independent observations — root can stay stable
+     * while mode flips between Major/Minor based on new evidence.
+     */
+    data class KeyResult(
+        val root: String?,
+        val mode: String?,
+        val confidence: Float
+    ) {
+        val combined: String? get() = if (root != null && mode != null) "$root $mode" else null
+    }
 
     // Pre-computed constants
     private val binWidth = SAMPLE_RATE.toFloat() / FFT_SIZE
@@ -98,17 +113,28 @@ object KeyDetector {
 
         // Step 5: Key detection on validated chroma
         val result = detectKey(chromaLong)
-        lastKey = result.first
-        confidence = result.second
+        confidence = result.confidence
 
         // Final gate: if confidence is too low even after detection, don't report
         if (confidence < 0.08f) {
             lastKey = "—"
+            lastRoot = null
+            lastMode = null
             confidence = 0f
+        } else {
+            lastRoot = result.root
+            lastMode = result.mode
+            lastKey = "${result.root} ${result.mode}"
         }
 
         return lastKey
     }
+
+    /**
+     * Returns root and mode as independent values.
+     * Call after detect() for the current frame's result.
+     */
+    fun getKeyResult(): KeyResult = KeyResult(lastRoot, lastMode, confidence)
 
     /**
      * Assess whether the chromagram contains sufficient tonal evidence to determine a key.
@@ -165,15 +191,22 @@ object KeyDetector {
         )
     }
 
-    private fun detectKey(chroma: FloatArray): Pair<String, Float> {
+    private data class DetectionResult(
+        val root: String,
+        val mode: String,
+        val confidence: Float
+    )
+
+    private fun detectKey(chroma: FloatArray): DetectionResult {
         val maxVal = chroma.max()
-        if (maxVal < 0.00001f) return Pair("—", 0f)
+        if (maxVal < 0.00001f) return DetectionResult("—", "", 0f)
 
         val normalized = FloatArray(12) { chroma[it] / maxVal }
 
         var bestCorrelation = -Float.MAX_VALUE
         var secondBest = -Float.MAX_VALUE
-        var bestKey = "—"
+        var bestRoot = "—"
+        var bestMode = ""
 
         for (root in 0 until 12) {
             val rotated = FloatArray(12) { normalized[(it + root) % 12] }
@@ -182,7 +215,8 @@ object KeyDetector {
             if (majorCorr > bestCorrelation) {
                 secondBest = bestCorrelation
                 bestCorrelation = majorCorr
-                bestKey = "${NOTE_NAMES[root]} Major"
+                bestRoot = NOTE_NAMES[root]
+                bestMode = "Major"
             } else if (majorCorr > secondBest) {
                 secondBest = majorCorr
             }
@@ -191,7 +225,8 @@ object KeyDetector {
             if (minorCorr > bestCorrelation) {
                 secondBest = bestCorrelation
                 bestCorrelation = minorCorr
-                bestKey = "${NOTE_NAMES[root]} Minor"
+                bestRoot = NOTE_NAMES[root]
+                bestMode = "Minor"
             } else if (minorCorr > secondBest) {
                 secondBest = minorCorr
             }
@@ -201,7 +236,7 @@ object KeyDetector {
         val gap = bestCorrelation - secondBest
         val conf = (gap / bestCorrelation.coerceAtLeast(0.001f)).coerceIn(0f, 1f)
 
-        return Pair(bestKey, conf)
+        return DetectionResult(bestRoot, bestMode, conf)
     }
 
     fun getConfidence(): Float = confidence
@@ -227,6 +262,8 @@ object KeyDetector {
         chromaLong.fill(0f)
         frameCount = 0
         lastKey = null
+        lastRoot = null
+        lastMode = null
         confidence = 0f
     }
 }
