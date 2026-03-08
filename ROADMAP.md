@@ -13,10 +13,10 @@ Living document. Items are grouped by theme, not priority. Status markers:
 ### Audio Metrics
 | Feature | Description | Status |
 |---------|-------------|--------|
-| LUFS metering | Integrated loudness (LUFS-I), short-term (LUFS-S), momentary (LUFS-M) per EBU R128 | Planned |
+| LUFS metering | Integrated loudness (LUFS-I), short-term (LUFS-S), momentary (LUFS-M) per EBU R128 | Done |
 | Dynamic range | Difference between loudest and quietest passages, measured over time | Planned |
-| Transient density | Count and intensity of detected onsets per unit time — how "busy" the rhythm is | Planned |
-| Crest factor | Peak-to-RMS ratio — indicates how compressed or dynamic the audio is | Planned |
+| Transient density | Count and intensity of detected onsets per unit time — how "busy" the rhythm is | Done |
+| Crest factor | Peak-to-RMS ratio — indicates how compressed or dynamic the audio is | Done |
 
 ### Tonal Analysis
 | Feature | Description | Status |
@@ -30,8 +30,8 @@ Living document. Items are grouped by theme, not priority. Status markers:
 ### Spectral Analysis
 | Feature | Description | Status |
 |---------|-------------|--------|
-| Frequency band energy | Energy in sub-bass (<60 Hz), bass (60-250), mids (250-4k), presence (4-8k), air (8k+) | Planned |
-| Spectral centroid | Brightness of the audio — single number indicating where the spectral weight sits | Planned |
+| Frequency band energy | Energy in sub-bass (<60 Hz), bass (60-250), mids (250-4k), presence (4-8k), air (8k+) | Done |
+| Spectral centroid | Brightness of the audio — single number indicating where the spectral weight sits | Done |
 | Spectral rolloff | Frequency below which N% of spectral energy is contained — darkness/brightness indicator | Planned |
 | Stereo imaging | Visualize stereo width, L/R balance, and mid/side energy — requires stereo capture | Planned |
 
