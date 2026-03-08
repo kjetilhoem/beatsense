@@ -11,12 +11,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.beatsense.analyzer.AnalyzerRegistry
 import com.beatsense.analyzer.AnalyzerResult
 import com.beatsense.analyzer.BpmAnalyzer
 import com.beatsense.analyzer.KeyAnalyzer
+import com.beatsense.analyzer.FrequencyBandAnalyzer
 import com.beatsense.analyzer.LevelAnalyzer
 import com.beatsense.audio.AudioCaptureService
 import com.beatsense.ui.BeatSenseScreen
@@ -31,11 +33,13 @@ class MainActivity : ComponentActivity() {
     private val bpmConfidence = mutableFloatStateOf(0f)
     private val keyConfidence = mutableFloatStateOf(0f)
     private val captureMode = mutableStateOf(CaptureMode.APP_AUDIO)
+    private val frequencyBands = mutableStateListOf<AnalyzerResult.Bands.Band>()
 
     private val registry = AnalyzerRegistry().apply {
         register(BpmAnalyzer())
         register(KeyAnalyzer())
         register(LevelAnalyzer())
+        register(FrequencyBandAnalyzer())
     }
 
     private val mediaProjectionLauncher = registerForActivityResult(
@@ -69,6 +73,7 @@ class MainActivity : ComponentActivity() {
                 audioLevel = audioLevel.floatValue,
                 bpmConfidence = bpmConfidence.floatValue,
                 keyConfidence = keyConfidence.floatValue,
+                frequencyBands = frequencyBands,
                 captureMode = captureMode.value,
                 onModeChanged = { mode -> captureMode.value = mode },
                 onStartCapture = { startCapture() },
@@ -122,6 +127,13 @@ class MainActivity : ComponentActivity() {
                     "level" -> when (result) {
                         is AnalyzerResult.Meter -> {
                             audioLevel.floatValue = result.level
+                        }
+                        else -> {}
+                    }
+                    "bands" -> when (result) {
+                        is AnalyzerResult.Bands -> {
+                            frequencyBands.clear()
+                            frequencyBands.addAll(result.bands)
                         }
                         else -> {}
                     }
