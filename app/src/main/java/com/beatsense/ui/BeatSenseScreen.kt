@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.beatsense.analyzer.AnalyzerResult
 import com.beatsense.ui.BeatSenseTheme as T
 
 @Composable
@@ -33,6 +34,7 @@ fun BeatSenseScreen(
     audioLevel: Float,
     bpmConfidence: Float,
     keyConfidence: Float,
+    frequencyBands: List<AnalyzerResult.Bands.Band> = emptyList(),
     captureMode: CaptureMode,
     onModeChanged: (CaptureMode) -> Unit,
     onStartCapture: () -> Unit,
@@ -220,6 +222,12 @@ fun BeatSenseScreen(
                 Spacer(modifier = Modifier.height(T.spaceM))
             }
 
+            // — Frequency Bands —
+            if (isCapturing && frequencyBands.isNotEmpty()) {
+                FrequencyBands(bands = frequencyBands)
+                Spacer(modifier = Modifier.height(T.spaceM))
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // — Mode Selector (only when not capturing) —
@@ -342,6 +350,73 @@ private fun ConfidenceBar(confidence: Float, label: String) {
             color = T.textTertiary,
             letterSpacing = 1.sp
         )
+    }
+}
+
+@Composable
+private fun FrequencyBands(bands: List<AnalyzerResult.Bands.Band>) {
+    Card(
+        shape = RoundedCornerShape(T.radiusL),
+        colors = CardDefaults.cardColors(containerColor = T.surface1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusL))
+    ) {
+        Column(
+            modifier = Modifier.padding(T.spaceM),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "BANDS",
+                fontSize = T.textCaption,
+                fontWeight = FontWeight.Medium,
+                color = T.textTertiary,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(T.spaceM))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(T.spaceXS),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                bands.forEach { band ->
+                    val animatedLevel by animateFloatAsState(
+                        targetValue = band.level,
+                        animationSpec = tween(durationMillis = 150),
+                        label = "band_${band.name}"
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(T.surface2),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(animatedLevel.coerceIn(0f, 1f))
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(T.accent.copy(alpha = 0.6f + animatedLevel * 0.4f))
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(T.spaceXS))
+                        Text(
+                            text = band.name,
+                            fontSize = 9.sp,
+                            color = T.textTertiary,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
