@@ -6,14 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -24,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.beatsense.analyzer.AnalyzerResult
 import com.beatsense.ui.BeatSenseTheme as T
 
 @Composable
@@ -36,7 +34,6 @@ fun BeatSenseScreen(
     bpmConfidence: Float,
     keyConfidence: Float,
     captureMode: CaptureMode,
-    analyzerResults: List<Pair<String, AnalyzerResult>> = emptyList(),
     onModeChanged: (CaptureMode) -> Unit,
     onStartCapture: () -> Unit,
     onStopCapture: () -> Unit
@@ -65,10 +62,6 @@ fun BeatSenseScreen(
         ),
         label = "pulseAlpha"
     )
-
-    // Filter out results already rendered as hero cards
-    val heroIds = setOf("bpm", "key", "level")
-    val additionalResults = analyzerResults.filter { it.first !in heroIds }
 
     Box(
         modifier = Modifier
@@ -127,128 +120,107 @@ fun BeatSenseScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.05f))
+            Spacer(modifier = Modifier.weight(0.1f))
 
-            // — Scrollable content area —
-            Column(
+            // — BPM Card (the hero moment) —
+            Card(
+                shape = RoundedCornerShape(T.radiusL),
+                colors = CardDefaults.cardColors(containerColor = T.surface1),
                 modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = if (isCapturing && bpm > 0f) T.accent.copy(alpha = 0.15f) else T.borderSubtle,
+                        shape = RoundedCornerShape(T.radiusL)
+                    )
             ) {
-                // — BPM Card (the hero moment) —
-                Card(
-                    shape = RoundedCornerShape(T.radiusL),
-                    colors = CardDefaults.cardColors(containerColor = T.surface1),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            width = 1.dp,
-                            color = if (isCapturing && bpm > 0f) T.accent.copy(alpha = 0.15f) else T.borderSubtle,
-                            shape = RoundedCornerShape(T.radiusL)
-                        )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(
+                        top = T.spaceXL,
+                        bottom = T.spaceXL + T.spaceS, // asymmetric: heavier bottom
+                        start = T.spaceL,
+                        end = T.spaceL
+                    )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(
-                            top = T.spaceXL,
-                            bottom = T.spaceXL + T.spaceS,
-                            start = T.spaceL,
-                            end = T.spaceL
-                        )
-                    ) {
-                        Text(
-                            text = "BPM",
-                            fontSize = T.textCaption,
-                            fontWeight = FontWeight.Medium,
-                            color = T.textTertiary,
-                            letterSpacing = 2.sp
-                        )
-                        Spacer(modifier = Modifier.height(T.spaceS))
-                        Text(
-                            text = if (animatedBpm > 0f) "%.0f".format(animatedBpm) else "—",
-                            fontSize = T.textHero,
-                            fontWeight = FontWeight.Bold,
-                            color = if (animatedBpm > 0f) T.accent else T.textTertiary,
-                            textAlign = TextAlign.Center,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        if (bpm > 0f) {
-                            Spacer(modifier = Modifier.height(T.spaceM))
-                            ConfidenceBar(confidence = bpmConfidence, label = "confidence")
-                        }
+                    Text(
+                        text = "BPM",
+                        fontSize = T.textCaption,
+                        fontWeight = FontWeight.Medium,
+                        color = T.textTertiary,
+                        letterSpacing = 2.sp
+                    )
+                    Spacer(modifier = Modifier.height(T.spaceS))
+                    Text(
+                        text = if (animatedBpm > 0f) "%.0f".format(animatedBpm) else "—",
+                        fontSize = T.textHero,
+                        fontWeight = FontWeight.Bold,
+                        color = if (animatedBpm > 0f) T.accent else T.textTertiary,
+                        textAlign = TextAlign.Center,
+                        fontFamily = FontFamily.Monospace
+                    )
+                    // Confidence indicator
+                    if (bpm > 0f) {
+                        Spacer(modifier = Modifier.height(T.spaceM))
+                        ConfidenceBar(confidence = bpmConfidence, label = "confidence")
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(T.spaceM))
+            Spacer(modifier = Modifier.height(T.spaceM))
 
-                // — Key Card —
-                Card(
-                    shape = RoundedCornerShape(T.radiusL),
-                    colors = CardDefaults.cardColors(containerColor = T.surface1),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            width = 1.dp,
-                            color = T.borderSubtle,
-                            shape = RoundedCornerShape(T.radiusL)
-                        )
+            // — Key Card —
+            Card(
+                shape = RoundedCornerShape(T.radiusL),
+                colors = CardDefaults.cardColors(containerColor = T.surface1),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = T.borderSubtle,
+                        shape = RoundedCornerShape(T.radiusL)
+                    )
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(
+                        top = T.spaceL,
+                        bottom = T.spaceL + T.spaceS,
+                        start = T.spaceL,
+                        end = T.spaceL
+                    )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(
-                            top = T.spaceL,
-                            bottom = T.spaceL + T.spaceS,
-                            start = T.spaceL,
-                            end = T.spaceL
-                        )
-                    ) {
-                        Text(
-                            text = "KEY",
-                            fontSize = T.textCaption,
-                            fontWeight = FontWeight.Medium,
-                            color = T.textTertiary,
-                            letterSpacing = 2.sp
-                        )
-                        Spacer(modifier = Modifier.height(T.spaceS))
-                        Text(
-                            text = musicalKey,
-                            fontSize = T.textDisplay,
-                            fontWeight = FontWeight.Bold,
-                            color = T.textPrimary,
-                            textAlign = TextAlign.Center
-                        )
-                        if (musicalKey != "—" && keyConfidence > 0f) {
-                            Spacer(modifier = Modifier.height(T.spaceM))
-                            ConfidenceBar(confidence = keyConfidence, label = "confidence")
-                        }
+                    Text(
+                        text = "KEY",
+                        fontSize = T.textCaption,
+                        fontWeight = FontWeight.Medium,
+                        color = T.textTertiary,
+                        letterSpacing = 2.sp
+                    )
+                    Spacer(modifier = Modifier.height(T.spaceS))
+                    Text(
+                        text = musicalKey,
+                        fontSize = T.textDisplay,
+                        fontWeight = FontWeight.Bold,
+                        color = T.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                    if (musicalKey != "—" && keyConfidence > 0f) {
+                        Spacer(modifier = Modifier.height(T.spaceM))
+                        ConfidenceBar(confidence = keyConfidence, label = "confidence")
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(T.spaceM))
+            Spacer(modifier = Modifier.height(T.spaceM))
 
-                // — Audio Level Meter —
-                if (isCapturing) {
-                    LevelMeter(level = animatedLevel)
-                    Spacer(modifier = Modifier.height(T.spaceM))
-                }
-
-                // — Dynamic analyzer cards (rendered by result type) —
-                if (isCapturing && additionalResults.isNotEmpty()) {
-                    for ((_, result) in additionalResults) {
-                        when (result) {
-                            is AnalyzerResult.Bands -> BandsCard(result)
-                            is AnalyzerResult.ValueGroup -> ValueGroupCard(result)
-                            is AnalyzerResult.HeroValue -> SecondaryHeroCard(result)
-                            is AnalyzerResult.Pending -> PendingCard(result)
-                            is AnalyzerResult.Meter -> {} // Level meter handled above
-                        }
-                        Spacer(modifier = Modifier.height(T.spaceS))
-                    }
-                }
-
+            // — Audio Level Meter —
+            if (isCapturing) {
+                LevelMeter(level = animatedLevel)
                 Spacer(modifier = Modifier.height(T.spaceM))
             }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             // — Mode Selector (only when not capturing) —
             if (!isCapturing) {
@@ -333,191 +305,6 @@ fun BeatSenseScreen(
     }
 }
 
-// — Dynamic card renderers (one per AnalyzerResult subtype) —
-
-@Composable
-private fun BandsCard(result: AnalyzerResult.Bands) {
-    Card(
-        shape = RoundedCornerShape(T.radiusM),
-        colors = CardDefaults.cardColors(containerColor = T.surface1),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusM))
-    ) {
-        Column(
-            modifier = Modifier.padding(T.spaceM),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = result.label,
-                fontSize = T.textCaption,
-                fontWeight = FontWeight.Medium,
-                color = T.textTertiary,
-                letterSpacing = 2.sp
-            )
-            Spacer(modifier = Modifier.height(T.spaceS))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                for (band in result.bands) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(0.6f)
-                                    .fillMaxHeight(band.level.coerceIn(0.02f, 1f))
-                                    .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 2.dp))
-                                    .background(T.accent.copy(alpha = 0.4f + band.level * 0.5f))
-                            )
-                        }
-                        Text(
-                            text = band.name,
-                            fontSize = 9.sp,
-                            color = T.textTertiary,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ValueGroupCard(result: AnalyzerResult.ValueGroup) {
-    Card(
-        shape = RoundedCornerShape(T.radiusM),
-        colors = CardDefaults.cardColors(containerColor = T.surface1),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusM))
-    ) {
-        Column(
-            modifier = Modifier.padding(T.spaceM),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = result.label,
-                fontSize = T.textCaption,
-                fontWeight = FontWeight.Medium,
-                color = T.textTertiary,
-                letterSpacing = 2.sp
-            )
-            Spacer(modifier = Modifier.height(T.spaceS))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                for (lv in result.values) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = lv.value,
-                            fontSize = T.textTitle,
-                            fontWeight = FontWeight.Bold,
-                            color = if (lv.value == "—") T.textTertiary else T.textPrimary,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Text(
-                            text = if (lv.unit.isNotEmpty()) "${lv.label} ${lv.unit}" else lv.label,
-                            fontSize = T.textCaption,
-                            color = T.textTertiary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SecondaryHeroCard(result: AnalyzerResult.HeroValue) {
-    Card(
-        shape = RoundedCornerShape(T.radiusM),
-        colors = CardDefaults.cardColors(containerColor = T.surface1),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusM))
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(
-                top = T.spaceM,
-                bottom = T.spaceM + T.spaceXS,
-                start = T.spaceM,
-                end = T.spaceM
-            )
-        ) {
-            Text(
-                text = result.label,
-                fontSize = T.textCaption,
-                fontWeight = FontWeight.Medium,
-                color = T.textTertiary,
-                letterSpacing = 2.sp
-            )
-            Spacer(modifier = Modifier.height(T.spaceXS))
-            Text(
-                text = result.value,
-                fontSize = T.textSubtitle,
-                fontWeight = FontWeight.Bold,
-                color = if (result.accentColor) T.accent
-                       else if (result.value == "—") T.textTertiary
-                       else T.textPrimary,
-                textAlign = TextAlign.Center,
-                fontFamily = FontFamily.Monospace
-            )
-            if (result.confidence > 0f && result.value != "—") {
-                Spacer(modifier = Modifier.height(T.spaceS))
-                ConfidenceBar(confidence = result.confidence, label = "confidence")
-            }
-        }
-    }
-}
-
-@Composable
-private fun PendingCard(result: AnalyzerResult.Pending) {
-    Card(
-        shape = RoundedCornerShape(T.radiusM),
-        colors = CardDefaults.cardColors(containerColor = T.surface1),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusM))
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(T.spaceM)
-        ) {
-            Text(
-                text = result.label,
-                fontSize = T.textCaption,
-                fontWeight = FontWeight.Medium,
-                color = T.textTertiary,
-                letterSpacing = 2.sp
-            )
-            if (result.reason.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(T.spaceXS))
-                Text(
-                    text = result.reason,
-                    fontSize = T.textLabel,
-                    color = T.textTertiary
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun ConfidenceBar(confidence: Float, label: String) {
     val animatedConf by animateFloatAsState(
@@ -586,3 +373,4 @@ private fun LevelMeter(level: Float) {
         }
     }
 }
+
