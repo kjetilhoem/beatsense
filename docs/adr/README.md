@@ -14,3 +14,4 @@ This directory contains the ADRs for BeatSense, following Michael Nygard's forma
 | [0008](0008-luminous-dark-design-system.md) | "Luminous" dark design system | Accepted |
 | [0009](0009-continuous-delivery.md) | Continuous Delivery | Accepted |
 | [0010](0010-analyzer-pipeline-architecture.md) | Analyzer pipeline architecture | Accepted |
+| [0011](0011-separate-mode-from-key.md) | Separate mode from key | Accepted |
