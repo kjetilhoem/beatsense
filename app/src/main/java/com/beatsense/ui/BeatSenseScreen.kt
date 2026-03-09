@@ -36,6 +36,7 @@ fun BeatSenseScreen(
     bpmConfidence: Float,
     keyConfidence: Float,
     frequencyBands: List<AnalyzerResult.Bands.Band> = emptyList(),
+    additionalResults: List<Pair<String, AnalyzerResult>> = emptyList(),
     captureMode: CaptureMode,
     onModeChanged: (CaptureMode) -> Unit,
     onStartCapture: () -> Unit,
@@ -238,6 +239,20 @@ fun BeatSenseScreen(
             if (isCapturing && frequencyBands.isNotEmpty()) {
                 FrequencyBands(bands = frequencyBands)
                 Spacer(modifier = Modifier.height(T.spaceM))
+            }
+
+            // — Dynamic Analyzer Cards —
+            if (isCapturing && additionalResults.isNotEmpty()) {
+                for ((_, result) in additionalResults) {
+                    when (result) {
+                        is AnalyzerResult.Bands -> BandsCard(result)
+                        is AnalyzerResult.ValueGroup -> ValueGroupCard(result)
+                        is AnalyzerResult.HeroValue -> SecondaryHeroCard(result)
+                        is AnalyzerResult.Pending -> PendingCard(result)
+                        is AnalyzerResult.Meter -> {} // Level meter handled above
+                    }
+                    Spacer(modifier = Modifier.height(T.spaceS))
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -457,6 +472,194 @@ private fun LevelMeter(level: Float) {
                     .clip(RoundedCornerShape(1.dp))
                     .background(segmentColor)
             )
+        }
+    }
+}
+
+@Composable
+private fun SecondaryHeroCard(result: AnalyzerResult.HeroValue) {
+    Card(
+        shape = RoundedCornerShape(T.radiusL),
+        colors = CardDefaults.cardColors(containerColor = T.surface1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusL))
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(T.spaceM)
+        ) {
+            Text(
+                text = result.label,
+                fontSize = T.textCaption,
+                fontWeight = FontWeight.Medium,
+                color = T.textTertiary,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(T.spaceS))
+            Text(
+                text = result.value,
+                fontSize = T.textDisplay,
+                fontWeight = FontWeight.Bold,
+                color = if (result.value == "—") T.textTertiary else T.textPrimary,
+                textAlign = TextAlign.Center,
+                lineHeight = 32.sp
+            )
+            if (result.confidence > 0f) {
+                Spacer(modifier = Modifier.height(T.spaceS))
+                ConfidenceBar(confidence = result.confidence, label = "confidence")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ValueGroupCard(result: AnalyzerResult.ValueGroup) {
+    Card(
+        shape = RoundedCornerShape(T.radiusL),
+        colors = CardDefaults.cardColors(containerColor = T.surface1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusL))
+    ) {
+        Column(
+            modifier = Modifier.padding(T.spaceM),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = result.label,
+                fontSize = T.textCaption,
+                fontWeight = FontWeight.Medium,
+                color = T.textTertiary,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(T.spaceM))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                result.values.forEach { lv ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = lv.value,
+                            fontSize = T.textBody,
+                            fontWeight = FontWeight.Bold,
+                            color = if (lv.value == "—") T.textTertiary else T.textPrimary
+                        )
+                        Text(
+                            text = lv.label,
+                            fontSize = T.textCaption,
+                            color = T.textTertiary
+                        )
+                        if (lv.unit.isNotEmpty()) {
+                            Text(
+                                text = lv.unit,
+                                fontSize = 9.sp,
+                                color = T.textTertiary.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BandsCard(result: AnalyzerResult.Bands) {
+    Card(
+        shape = RoundedCornerShape(T.radiusL),
+        colors = CardDefaults.cardColors(containerColor = T.surface1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusL))
+    ) {
+        Column(
+            modifier = Modifier.padding(T.spaceM),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = result.label,
+                fontSize = T.textCaption,
+                fontWeight = FontWeight.Medium,
+                color = T.textTertiary,
+                letterSpacing = 2.sp
+            )
+            Spacer(modifier = Modifier.height(T.spaceM))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(T.spaceXS),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                result.bands.forEach { band ->
+                    val animatedLevel by animateFloatAsState(
+                        targetValue = band.level,
+                        animationSpec = tween(durationMillis = 150),
+                        label = "band_${band.name}"
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(T.surface2),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(animatedLevel.coerceIn(0f, 1f))
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(T.accent.copy(alpha = 0.6f + animatedLevel * 0.4f))
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(T.spaceXS))
+                        Text(
+                            text = band.name,
+                            fontSize = 9.sp,
+                            color = T.textTertiary,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PendingCard(result: AnalyzerResult.Pending) {
+    Card(
+        shape = RoundedCornerShape(T.radiusL),
+        colors = CardDefaults.cardColors(containerColor = T.surface1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, T.borderSubtle, RoundedCornerShape(T.radiusL))
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(T.spaceM)
+        ) {
+            Text(
+                text = result.label,
+                fontSize = T.textCaption,
+                fontWeight = FontWeight.Medium,
+                color = T.textTertiary,
+                letterSpacing = 2.sp
+            )
+            if (result.reason.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(T.spaceXS))
+                Text(
+                    text = result.reason,
+                    fontSize = T.textLabel,
+                    color = T.textTertiary.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }
