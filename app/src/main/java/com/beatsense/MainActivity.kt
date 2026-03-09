@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
         register(FrequencyBandAnalyzer())
         register(SpectralCentroidAnalyzer())
         register(SpectralRolloffAnalyzer())
+        register(TuningAnalyzer())
         register(TransientDensityAnalyzer())
         register(CrestFactorAnalyzer())
         register(DynamicRangeAnalyzer())
