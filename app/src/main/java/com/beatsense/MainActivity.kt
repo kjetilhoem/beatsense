@@ -14,12 +14,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
-import com.beatsense.analyzer.AnalyzerRegistry
-import com.beatsense.analyzer.AnalyzerResult
-import com.beatsense.analyzer.BpmAnalyzer
-import com.beatsense.analyzer.KeyAnalyzer
-import com.beatsense.analyzer.FrequencyBandAnalyzer
-import com.beatsense.analyzer.LevelAnalyzer
+import com.beatsense.analyzer.*
 import com.beatsense.audio.AudioCaptureService
 import com.beatsense.ui.BeatSenseScreen
 import com.beatsense.ui.CaptureMode
@@ -35,12 +30,19 @@ class MainActivity : ComponentActivity() {
     private val keyConfidence = mutableFloatStateOf(0f)
     private val captureMode = mutableStateOf(CaptureMode.APP_AUDIO)
     private val frequencyBands = mutableStateListOf<AnalyzerResult.Bands.Band>()
+    private val analyzerResults = mutableStateOf<List<Pair<String, AnalyzerResult>>>(emptyList())
 
     private val registry = AnalyzerRegistry().apply {
         register(BpmAnalyzer())
         register(KeyAnalyzer())
         register(LevelAnalyzer())
+        register(LufsAnalyzer())
         register(FrequencyBandAnalyzer())
+        register(SpectralCentroidAnalyzer())
+        register(SpectralRolloffAnalyzer())
+        register(TransientDensityAnalyzer())
+        register(CrestFactorAnalyzer())
+        register(DynamicRangeAnalyzer())
     }
 
     private val mediaProjectionLauncher = registerForActivityResult(
@@ -76,6 +78,7 @@ class MainActivity : ComponentActivity() {
                 bpmConfidence = bpmConfidence.floatValue,
                 keyConfidence = keyConfidence.floatValue,
                 frequencyBands = frequencyBands,
+                additionalResults = analyzerResults.value,
                 captureMode = captureMode.value,
                 onModeChanged = { selected -> captureMode.value = selected },
                 onStartCapture = { startCapture() },
@@ -145,6 +148,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            // Collect additional analyzer results for dynamic UI
+            val additional = results.filter { (id, _) ->
+                id !in setOf("bpm", "key", "level", "bands")
+            }
+            analyzerResults.value = additional
         }
 
         val serviceIntent = Intent(this, AudioCaptureService::class.java).apply {
