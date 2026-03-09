@@ -16,3 +16,18 @@ local.properties
 # APK files
 *.apk
 *.aab
+
+# Claude Code
+.claude/
+
+# Signing
+*.jks
+*.keystore
+keystore.properties
+
+# Secrets
+.env
+.env.*
+
+# Misc
+gradlew.yaml
